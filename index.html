@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CatatKas - Aplikasi Penjualan & Keuangan</title>
+    <style>
+        :root {
+            --bg-color: #fff9f0;
+            --secondary-color: #d0e3ff;
+            --primary-color: #7096d1;
+            --text-color: #333;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        /* Dashboard Styles */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: var(--secondary-color);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .card h3 { margin: 0; font-size: 0.9rem; color: #555; }
+        .card p { margin: 10px 0 0; font-size: 1.4rem; font-weight: bold; color: var(--primary-color); }
+
+        /* Form Styles */
+        .form-section {
+            background-color: var(--white);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label { display: block; margin-bottom: 5px; font-weight: 600; }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--secondary-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        input:focus { border-color: var(--primary-color); }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover { opacity: 0.9; }
+
+        /* Table Styles */
+        .history-section {
+            background-color: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .type-penjualan { color: #2ecc71; font-weight: bold; }
+        .type-pemasukan { color: #3498db; font-weight: bold; }
+        .type-pengeluaran { color: #e74c3c; font-weight: bold; }
+
+        .empty-state {
+            padding: 20px;
+            text-align: center;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>CatatKas</h1>
+
+    <!-- Ringkasan Keuangan -->
+    <div class="dashboard">
+        <div class="card">
+            <h3>Total Penjualan</h3>
+            <p id="totalPenjualan">Rp 0</p>
+        </div>
+        <div class="card">
+            <h3>Pemasukan Lain</h3>
+            <p id="totalPemasukan">Rp 0</p>
+        </div>
+        <div class="card">
+            <h3>Total Pengeluaran</h3>
+            <p id="totalPengeluaran">Rp 0</p>
+        </div>
+        <div class="card" style="background-color: #e0f0ff;">
+            <h3>Saldo Akhir</h3>
+            <p id="saldoAkhir">Rp 0</p>
+        </div>
+    </div>
+
+    <!-- Form Input -->
+    <div class="form-section">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="form-group">
+                <label>Jenis Transaksi</label>
+                <select id="type">
+                    <option value="penjualan">Penjualan</option>
+                    <option value="pemasukan">Pemasukan Lain</option>
+                    <option value="pengeluaran">Pengeluaran</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Nominal (Rp)</label>
+                <input type="number" id="amount" placeholder="Contoh: 50000">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Keterangan</label>
+            <input type="text" id="note" placeholder="Nama barang atau keperluan...">
+        </div>
+        <button onclick="addTransaction()">Simpan Transaksi</button>
+    </div>
+
+    <!-- Riwayat Transaksi -->
+    <div class="history-section">
+        <table>
+            <thead>
+                <tr>
+                    <th>Tgl</th>
+                    <th>Jenis</th>
+                    <th>Keterangan</th>
+                    <th>Nominal</th>
+                </tr>
+            </thead>
+            <tbody id="transactionList">
+                <!-- Data akan muncul di sini -->
+            </tbody>
+        </table>
+        <div id="emptyState" class="empty-state">Belum ada transaksi.</div>
+    </div>
+</div>
+
+<script>
+    let transactions = JSON.parse(localStorage.getItem('catatKasData')) || [];
+
+    function formatRupiah(angka) {
+        return "Rp " + new Intl.NumberFormat('id-ID').format(angka);
+    }
+
+    function updateDashboard() {
+        let penjualan = 0, pemasukan = 0, pengeluaran = 0;
+
+        transactions.forEach(t => {
+            if (t.type === 'penjualan') penjualan += t.amount;
+            else if (t.type === 'pemasukan') pemasukan += t.amount;
+            else if (t.type === 'pengeluaran') pengeluaran += t.amount;
+        });
+
+        document.getElementById('totalPenjualan').innerText = formatRupiah(penjualan);
+        document.getElementById('totalPemasukan').innerText = formatRupiah(pemasukan);
+        document.getElementById('totalPengeluaran').innerText = formatRupiah(pengeluaran);
+        document.getElementById('saldoAkhir').innerText = formatRupiah((penjualan + pemasukan) - pengeluaran);
+    }
+
+    function renderTransactions() {
+        const list = document.getElementById('transactionList');
+        const emptyState = document.getElementById('emptyState');
+        list.innerHTML = '';
+
+        if (transactions.length === 0) {
+            emptyState.style.display = 'block';
+        } else {
+            emptyState.style.display = 'none';
+            // Tampilkan dari yang terbaru
+            [...transactions].reverse().forEach(t => {
+                const row = `<tr>
+                    <td>${t.date}</td>
+                    <td class="type-${t.type}">${t.type.toUpperCase()}</td>
+                    <td>${t.note}</td>
+                    <td>${formatRupiah(t.amount)}</td>
+                </tr>`;
+                list.innerHTML += row;
+            });
+        }
+    }
+
+    function addTransaction() {
+        const type = document.getElementById('type').value;
+        const amount = parseInt(document.getElementById('amount').value);
+        const note = document.getElementById('note').value;
+        const date = new Date().toLocaleDateString('id-ID');
+
+        if (!amount || !note) {
+            alert("Harap isi nominal dan keterangan!");
+            return;
+        }
+
+        const newTransaction = { type, amount, note, date };
+        transactions.push(newTransaction);
+        
+        localStorage.setItem('catatKasData', JSON.stringify(transactions));
+        
+        // Reset form
+        document.getElementById('amount').value = '';
+        document.getElementById('note').value = '';
+        
+        updateDashboard();
+        renderTransactions();
+    }
+
+    // Inisialisasi awal
+    updateDashboard();
+    renderTransactions();
+</script>
+
+</body>
+</html>
